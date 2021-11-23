@@ -3,9 +3,9 @@
 #
 #   Author          : Viacheslav Zamaraev
 #   email           : zamaraev@gmail.com
-#   Script Name     : 04_shp2pg.py
-#   Created         : 25th September 2019
-#   Last Modified	: 25th September 2019
+#   Script Name     : 01_shp2pg.py
+#   Created         : 21th Oktober 2019
+#   Last Modified	: 21th Oktober 2019
 #   Version		    : 1.0
 #
 # Modifications	: 1.1 -
@@ -13,7 +13,9 @@
 #
 # Description   : This script will search any *.shp files in the given directory by list (in file_list_shp.txt ) and convert to EPSG:SRID 4326 and load to postgresql+postgis
 # converting by using this utility : ogr2ogr -t_srs EPSG:4326 input_4236.shp input.shp
-
+#  ogr2ogr  -lco ENCODING=UTF-8  -skipfailures -s_srs "EPSG:7683" -t_srs "EPSG:4326"   -f "ESRI Shapefile"  C:\GIS\test\qwe.shp  C:\GIS\test\lu_plan.shp
+# https://trac.osgeo.org/postgis/wiki/UsersWikiOGR
+# https://gdal.org/drivers/vector/pg.html#configuration-options
 
 import os                   # Load the Library Module
 import os.path
@@ -75,13 +77,18 @@ def shp_to_4326(dir_in='', dir_out=''):
                 # Prj file exist
                 file_prj = file_name + '.prj'
                 if os.path.isfile(file_prj):
-                    ident = Sridentify()
+                    ident = Sridentify(mode='cli', call_remote_api=False)
+
                     ident.from_file(file_prj)
                     srid = ident.get_epsg()
-                    if str(srid) != 'None':
+                    print(srid)
+
+                    if srid:
                         srid_source = ' -s ' + str(srid) + ':4326 '
-                        cmd_line = program_shp2pgsql + ' -d -I -W "cp1251"' + srid_source + ' ' + file_in + ' \"' + schema + '\".\"' + table_name + "\"" + ' -h ' + cfg.host + ' -u ' + cfg.user + ' |psql -d ' + cfg.database_gis + ' -U '+ cfg.user
-                        print(cmd_line)
+                    else:
+                        srid_source = ' -s ' + cfg.default_epsg
+                    cmd_line = program_shp2pgsql + ' -d -I -W ' + cfg.default_locale + srid_source + ' ' + file_in + ' \"' + schema + '\".\"' + table_name + "\"" + ' |psql ' + ' -h ' + cfg.host + ' -u ' + cfg.user +' -d ' + cfg.database_gis + ' -U ' + cfg.user
+                    print(cmd_line)
 
                 #print(os.path.join(r, file))
                 #print(file_in)
