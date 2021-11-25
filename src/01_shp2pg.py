@@ -17,37 +17,22 @@
 # https://trac.osgeo.org/postgis/wiki/UsersWikiOGR
 # https://gdal.org/drivers/vector/pg.html#configuration-options
 
+# from sridentify import Sridentify
+# from time import strftime   # Load just the strftime Module from Time
+#import logging
+#from sys import platform as _platform
+import logging
 import os                   # Load the Library Module
 import os.path
-from sridentify import Sridentify
-from time import strftime   # Load just the strftime Module from Time
-#import logging
 from datetime import datetime
-from sys import platform as _platform
+import os
 import cfg #some global configurations
+import subprocess
 
-global dir_shp_in
-global program_shp2pgsql
-
-dir_shp_in = cfg.folder_win
-dir_shp_in_linux = cfg.folder_linux
-# Linux platform
-if _platform == "linux" or _platform == "linux2" or _platform == "darwin":
-    dir_shp_in = dir_shp_in_linux
-# Windows or Windows 64-bit
-#if _platform == "win32" or _platform == "win64":
-
-
-#global dir_shp_out
-#dir_shp_out = "c:\\test2"
-#global program_ogr2ogr
 
 #program_ogr2ogr = "ogr2ogr"
 #shp2pg_program = "shp2pg"
-program_shp2pgsql = 'shp2pgsql'
-
-global schema
-schema = cfg.schema
+# program_shp2pgsql = 'shp2pgsql'
 
 # def dir_clear(dir_out =''):
 #     if len(str(dir_out)) == 0:
@@ -57,38 +42,73 @@ schema = cfg.schema
 #         os.remove(os.path.join(dir_out, f))
 
 
-def shp_to_4326(dir_in='', dir_out=''):
+os.environ['PROJ_LIB'] = 'C:\\Program Files\\PostgreSQL\\13\\share\\contrib\\postgis-3.1\\proj'
+os.environ['GDAL_DATA'] = 'C:\\Program Files\\PostgreSQL\\13\\gdal-data'
+# GDAL_DATA=C:\Program Files\PostgreSQL\13\gdal-data
+# PROJ_LIB=C:\Program Files\PostgreSQL\13\share\contrib\postgis-3.1\proj
+
+
+for handler in logging.root.handlers[:]: #Remove all handlers associated with the root logger object.
+        logging.root.removeHandler(handler)
+file_log = str(os.path.join(os.getcwd(), cfg.FILE_LOG))
+logging.basicConfig(filename=file_log, format='%(asctime)s %(levelname)s %(message)s', level=logging.DEBUG, filemode='w') #
+logging.info(file_log)
+
+
+
+def shp_to_4326(dir_in=''):
     if len(str(dir_in)) == 0:
         dir_in = os.getcwd()
-    if len(str(dir_out)) == 0:
-        dir_out = os.getcwd()
+    # if len(str(dir_out)) == 0:
+    #     dir_out = os.getcwd()
 
     # r=root, d=directories, f = files
     for r, d, f in os.walk(dir_in):
         for file in f:
             file_in = str(os.path.join(r, file))
-            #ff = file.split(".")[0] + "_4326" + ".shp"
-            #file_out = str(os.path.join(dir_shp_out, ff))
-            ext = '.'.join(file.split('.')[1:]).lower()
-
             file_name = file_in.split('.')[0]
             table_name = file.split('.')[0]
+            ext = '.'.join(file.split('.')[1:]).lower()
+            # logging.info(f"{file_in}")
+            # process = None
             if ext == "shp":
-                # Prj file exist
-                file_prj = file_name + '.prj'
-                if os.path.isfile(file_prj):
-                    ident = Sridentify(mode='cli', call_remote_api=False)
+                ff = file.split(".")[0] + f"_" + cfg.DEFAULT_EPSG.split(":")[1] + ".shp"
+                file_out = str(os.path.join(cfg.FOLDER_OUT, ff.upper()))
+                # logging.info(f"{file_out}")
+                cmd_line = f"{cfg.APP_OGR} -t_srs {cfg.DEFAULT_EPSG} -overwrite -skipfailures -lco ENCODING={cfg.DEFAULT_LOCALE} {file_out} {file_in}"
+                # os.system(cmd_line)
+                logging.info(f"{cmd_line}")
 
-                    ident.from_file(file_prj)
-                    srid = ident.get_epsg()
-                    print(srid)
+                process = subprocess.Popen(cmd_line, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                # logging.error(process.stderr.read())
+                stde = str(process.stderr.read().decode("utf-8"))
+                # stdout, stderr = process.communicate()
+                # stdout = [x for x in stdout.split("\n") if x != ""]
+                stderr = set([x for x in stde.split("\r\n") if x != "" ])
+                for qq in stderr:
+                    logging.error(f"{file_out} : {qq}")
 
-                    if srid:
-                        srid_source = ' -s ' + str(srid) + ':4326 '
-                    else:
-                        srid_source = ' -s ' + cfg.default_epsg
-                    cmd_line = program_shp2pgsql + ' -d -I -W ' + cfg.default_locale + srid_source + ' ' + file_in + ' \"' + schema + '\".\"' + table_name + "\"" + ' |psql ' + ' -h ' + cfg.host + ' -u ' + cfg.user +' -d ' + cfg.database_gis + ' -U ' + cfg.user
-                    print(cmd_line)
+
+                # "C:\Apps\QGIS 3.16\bin\ogr2ogr.exe" -t_srs  "EPSG:4326" -lco ENCODING=UTF-8  c:\gis\out\test.shp  c:\gis\test\лу\Lu_Plan.shp
+                # ogr2ogr - overwrite - f "PostgreSQL" PG: "host=localhost dbname=mydb user=postgres password=xxxxx"  F:\xxx\test\quj.shp
+                # os.system('ogr2ogr ' + '-overwrite ' + '-f ' + '"' + "PostgreSQL" + '"' + ' PG:' + '"' + "host=localhost user=postgres dbname=mydb password=xxxx" + '"' + ' ' + '"' + "F:\xxx\test\quj.shp" + '"')
+
+                # cmd_line = program_shp2pgsql + ' -d -I -W ' + cfg.default_locale + srid_source + ' ' + file_in + ' \"' + schema + '\".\"' + table_name + "\"" + ' |psql ' + ' -h ' + cfg.host + ' -u ' + cfg.user +' -d ' + cfg.database_gis + ' -U ' + cfg.user
+                print(cmd_line)
+
+                # # Prj file exist
+                # file_prj = file_name + '.prj'
+                # if os.path.isfile(file_prj):
+                #     ident = Sridentify(mode='cli', call_remote_api=False)
+                #     ident.from_file(file_prj)
+                #     srid = ident.get_epsg()
+                #     print(srid)
+                #
+                #     if srid:
+                #         srid_source = ' -s ' + str(srid) + ':4326 '
+                #     else:
+                #         srid_source = ' -s ' + cfg.DEFAULT_EPSG
+                #
 
                 #print(os.path.join(r, file))
                 #print(file_in)
@@ -99,7 +119,7 @@ def main():
     print('Starting at :' + str(time1))
 
     #dir_clear(dir_shp_out)
-    shp_to_4326(dir_shp_in)
+    shp_to_4326(cfg.FOLDER_IN)
     #os.system(program_ogr2ogr + " -t_srs EPSG:4326 " +  file_in +" "+ file_out)
 
     time2 = datetime.now()
