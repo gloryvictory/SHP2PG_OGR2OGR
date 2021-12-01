@@ -63,11 +63,13 @@ def pg_get_records_count(shp_file_in=''):
     ff = shp_file_in.split(".")[0] + f"_" + str(cfg.DEFAULT_EPSG)
     table_name = ff.upper()
     print(table_name)
-    db_conn = psycopg2.connect(host=cfg.DB_HOST, port=cfg.DB_PORT, dbname=cfg.DB_DATABASE, user=cfg.DB_USER, password=cfg.DB_PASSWORD)
-    db_cursor = db_conn.cursor()
-    s = f"SELECT COUNT(*) FROM {table_name}"
-    # Error trapping
+
     try:
+        db_conn = psycopg2.connect(host=cfg.DB_HOST, port=cfg.DB_PORT, dbname=cfg.DB_DATABASE, user=cfg.DB_USER,
+                                   password=cfg.DB_PASSWORD)
+        db_cursor = db_conn.cursor()
+        s = f"SELECT COUNT(*) FROM {table_name}"
+        # Error trapping
         # Execute the SQL
         db_cursor.execute(s)
         # Retrieve records from Postgres into a Python List
@@ -76,10 +78,11 @@ def pg_get_records_count(shp_file_in=''):
     except psycopg2.Error as e:
         t_message = "Database error: " + e + "/n SQL: " + s
         return 0
-    # Close the database cursor and connection
-    db_cursor.close()
-    db_conn.close()
-    return count
+    finally:
+        # Close the database cursor and connection
+        db_cursor.close()
+        db_conn.close()
+        return count
 
 
 def shp_pg_layers_get_count(dir_in='', dir_out=''):
