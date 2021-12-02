@@ -41,7 +41,7 @@ except Exception as e:
 # Получаем кол-во объектов из шейп-файла
 def shp_get_records_count(shp_file_in=''):
     file_dbf = shp_file_in.replace('.shp', '.dbf')
-    print(file_dbf)
+    # print(file_dbf)
     if os.path.isfile(file_dbf):
         sf = shapefile.Reader(file_dbf)
         _count = len(sf.records())
@@ -63,11 +63,11 @@ def pg_get_records_count(shp_file_in=''):
     ff = shp_file_in.split(".")[0] + f"_" + str(cfg.DEFAULT_EPSG)
     table_name = ff.upper()
     print(table_name)
-
+    db_conn = psycopg2.connect(host=cfg.DB_HOST, port=cfg.DB_PORT, dbname=cfg.DB_DATABASE, user=cfg.DB_USER,
+                               password=cfg.DB_PASSWORD)
+    db_cursor = db_conn.cursor()
     try:
-        db_conn = psycopg2.connect(host=cfg.DB_HOST, port=cfg.DB_PORT, dbname=cfg.DB_DATABASE, user=cfg.DB_USER,
-                                   password=cfg.DB_PASSWORD)
-        db_cursor = db_conn.cursor()
+
         s = f"SELECT COUNT(*) FROM {table_name}"
         # Error trapping
         # Execute the SQL

@@ -43,7 +43,7 @@ import subprocess
 
 # os.environ['PROJ_LIB'] = 'C:\\Program Files\\PostgreSQL\\13\\share\\contrib\\postgis-3.1\\proj'
 
-os.environ['PROJ_LIB'] ='C:\\Apps\\QGIS 3.20.3\\share\\proj'
+os.environ['PROJ_LIB'] = 'C:\\Apps\\QGIS 3.20.3\\share\\proj'
 
 os.environ['GDAL_DATA'] = 'C:\\Program Files\\PostgreSQL\\13\\gdal-data'
 # GDAL_DATA=C:\Program Files\PostgreSQL\13\gdal-data
@@ -61,8 +61,6 @@ logging.info(file_log)
 def shp_to_4326(dir_in=''):
     if len(str(dir_in)) == 0:
         dir_in = os.getcwd()
-    # if len(str(dir_out)) == 0:
-    #     dir_out = os.getcwd()
 
     # r=root, d=directories, f = files
     for r, d, f in os.walk(dir_in):
@@ -89,9 +87,7 @@ def shp_to_4326(dir_in=''):
                     logging.error(f"{file_out} : {qq}")
 
                 # "C:\Apps\QGIS 3.16\bin\ogr2ogr.exe" -t_srs  "EPSG:4326" -lco ENCODING=UTF-8  c:\gis\out\test.shp  c:\gis\test\лу\Lu_Plan.shp
-                # ogr2ogr - overwrite - f "PostgreSQL" PG: "host=localhost dbname=mydb user=postgres password=xxxxx"  F:\xxx\test\quj.shp
                 # os.system('ogr2ogr ' + '-overwrite ' + '-f ' + '"' + "PostgreSQL" + '"' + ' PG:' + '"' + "host=localhost user=postgres dbname=mydb password=xxxx" + '"' + ' ' + '"' + "F:\xxx\test\quj.shp" + '"')
-
                 # cmd_line = program_shp2pgsql + ' -d -I -W ' + cfg.default_locale + srid_source + ' ' + file_in + ' \"' + schema + '\".\"' + table_name + "\"" + ' |psql ' + ' -h ' + cfg.host + ' -u ' + cfg.user +' -d ' + cfg.database_gis + ' -U ' + cfg.user
                 print(cmd_line)
 
@@ -100,7 +96,7 @@ def shp_to_pg(dir_in=''):
     if len(str(dir_in)) == 0:
         dir_in = os.getcwd()
 
-    for r, d, f in os.walk(dir_in): # r=root, d=directories, f = files
+    for r, d, f in os.walk(dir_in):  # r=root, d=directories, f = files
         for file in f:
             file_in = str(os.path.join(r, file))
             file_name = file_in.split('.')[0]
@@ -111,7 +107,6 @@ def shp_to_pg(dir_in=''):
                 file_out = str(os.path.join(cfg.FOLDER_OUT, ff.upper()))
                 # logging.info(f"{file_out}")
                 cmd_line = f"{cfg.APP_OGR} -overwrite -skipfailures  -f \"PostgreSQL\" PG:\"host={cfg.DB_HOST} user={cfg.DB_USER} dbname={cfg.DB_DATABASE} password={cfg.DB_PASSWORD}\"  -nln {table_name} {file_in}"
-                # "c:\Apps\QGIS 3.20.3\bin\ogr2ogr.exe"  -overwrite -skipfailures -f "PostgreSQL" PG:"host=r48-vapp-geos01.zsniigg.local user=gisdata dbname=gisdata password=gisdata"  -nln LOV_ZS_4326 C:\GIS\out\LOV_ZS_4326.shp
                 # os.system(cmd_line)
                 logging.info(f"{cmd_line}")
 
@@ -126,7 +121,6 @@ def shp_to_pg(dir_in=''):
                 # cmd_line = program_shp2pgsql + ' -d -I -W ' + cfg.default_locale + srid_source + ' ' + file_in + ' \"' + schema + '\".\"' + table_name + "\"" + ' |psql ' + ' -h ' + cfg.host + ' -u ' + cfg.user +' -d ' + cfg.database_gis + ' -U ' + cfg.user
 
                 print(cmd_line)
-
 
 
 def main():
